@@ -1,3 +1,4 @@
+from crypt import methods
 from flask import render_template, request, redirect
 import csv
 from registro_ig import app
@@ -35,6 +36,8 @@ def alta():
             fichero = open("data/movimientos.txt", "a", newline="")
             csvWriter = csv.writer(fichero, delimiter=",", quotechar='"')
 
+            # Generar un nuevo id
+
             csvWriter.writerow([request.form['date'], request.form['concept'], request.form['quantity']])
             fichero.close()
 
@@ -59,3 +62,36 @@ def validaFormulario(camposFormulario):
     return errores
 
     
+@app.route("/modificar/<int: id>", methods=["GET", "POST"])
+def modifica(id):
+    if request.method == "GET":
+        """
+        1. Consultar en movimientos.txt y recueperar el registro con id al de la petición
+        2. Devolver el formulario html con los datos de mi registro
+        """
+
+        return render_template("modifica.html", registro=[])
+    else:
+        """
+        1. validar registro de entrada
+        2. Si el registro es correcto lo sustituyo en movimientos.txt. La mejor manera es copiar registro a registro e fichero nuevo y dar el cambiazo
+        3. redirect 
+        4. Si el registro es incorrecto la gestion de errores que conocemos
+        """
+        pass
+
+@app.route("/borrar/<int:id>", methods=["GET", "POST"])
+def borrar(id):
+    if request.method == "GET":
+        """
+        1. Consultar en movimientos.txt y recueperar el registro con id al de la petición
+        2. Devolver el formulario html con los datos de mi registro, no modificables 
+        3. Tendrá un boton que diga confirmar.
+        """
+        return render_template("borra.html", registro=[])
+    else:
+        """
+            Borrar el registro
+        """       
+        pass
+ 
