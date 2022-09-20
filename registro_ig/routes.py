@@ -1,6 +1,7 @@
 from flask import render_template, request, redirect
 import csv
 from registro_ig import app
+from datetime import date
 
 
 @app.route("/")
@@ -19,15 +20,42 @@ def index():
 @app.route("/nuevo", methods=["GET", "POST"])
 def alta():
     if request.method == "GET":
-        return render_template("new.html", pageTitle="Alta")
+        return render_template("new.html", pageTitle="Alta", 
+                               dataForm={})
     else:
-        fichero = open("data/movimientos.txt", "a", newline="")
-        csvWriter = csv.writer(fichero, delimiter=",", quotechar='"')
+        """
+            1. Validar el formulario
+                Fecha valida y <= hoy
+            2. Concepto no sea vacío
+            3. Cantidad no se cero     
+        """
+        errores = validaFormulario(request.form)
 
-        #1ª validar que request.form.date <= hoy 
-        #si date > hoy devolver el formulario vacío
+        if not errores:
+            fichero = open("data/movimientos.txt", "a", newline="")
+            csvWriter = csv.writer(fichero, delimiter=",", quotechar='"')
 
-        csvWriter.writerow([request.form['date'], request.form['concept'], request.form['quantity']])
-        fichero.close()
+            csvWriter.writerow([request.form['date'], request.form['concept'], request.form['quantity']])
+            fichero.close()
 
-        return redirect("/")
+            return redirect("/")
+        else:
+            return render_template("new.html", pageTitle="Alta", msgErrors=errores, dataForm=dict(request.form))
+
+def validaFormulario(camposFormulario):
+    errores = []
+    hoy = date.today().isoformat()
+    if camposFormulario['date'] > hoy:
+        errores.append("La fecha introducida es es futuro.")
+
+    if camposFormulario['concept'] == "":
+        errores.append("Introduce un concepto para la transacción.")
+
+    #La primera condición es para que el número sea distinto de cero
+    #la segunda condición es para que el campo no esté vacío
+    if camposFormulario["quantity"] == "" or float(camposFormulario["quantity"]) == 0.0:
+        errores.append("Introduce una cantidad positiva o negativa.")
+
+    return errores
+
+    
