@@ -3,20 +3,13 @@ from flask import render_template, request, redirect, url_for
 import csv
 from registro_ig import app
 from datetime import date
-
+from config import *
+from registro_ig.models import delete_by, select_all, select_by, insert
+import os
 
 @app.route("/")
 def index():
-    fichero = open("data/movimientos.txt", "r")
-    csvReader = csv.reader(fichero, delimiter=',', quotechar='"')
-    movimientos = []
-    for movimiento in csvReader:
-        movimientos.append(movimiento)
-
-    # movimientos = [movimiento for movimiento in csvReader] #list comprehension
-
-    fichero.close()
-    return render_template("index.html", pageTitle="Lista", movements=movimientos)
+    return render_template("index.html", pageTitle="Lista", movements=select_all())
 
 @app.route("/nuevo", methods=["GET", "POST"])
 def alta():
@@ -34,22 +27,10 @@ def alta():
 
         if not errores:
             #Obtener el nuevo id
-            fichero = open("data/last_id.txt", "r")
-            registro = fichero.read()
-            id = int(registro) + 1
-            print(id)
-            fichero.close()
-
-            fichero = open("data/movimientos.txt", "a", newline="")
-            csvWriter = csv.writer(fichero, delimiter=",", quotechar='"')
-
-            csvWriter.writerow(["{}".format(id), request.form['date'], request.form['concept'], request.form['quantity']])
-            fichero.close()
-
-            fichero = open("data/last_id.txt", "w")
-            fichero.write(f"{id}")
-            fichero.close()           
-
+            insert([request.form['date'],
+                    request.form['concept'],
+                    request.form['quantity']
+                  ])
             return redirect(url_for("index"))
         else:
             return render_template("new.html", pageTitle="Alta", msgErrors=errores, dataForm=dict(request.form))
@@ -97,16 +78,7 @@ def borrar(id):
         2. Devolver el formulario html con los datos de mi registro, no modificables 
         3. Tendrá un boton que diga confirmar.
         """
-        fichero = open("data/movimientos.txt", "r", newline="")
-        csvReader = csv.reader(fichero, delimiter=',', quotechar='"')
-        registro_definitivo = []
-        for registro in csvReader:
-            if registro[0] == str(id):
-                registro_definitivo = registro
-                break
-
-        fichero.close()
-
+        registro_definitivo = select_by(id)
         if registro_definitivo:
             return render_template("delete.html", registro=registro_definitivo)
         else:
@@ -114,7 +86,14 @@ def borrar(id):
     else:
         """
             Borrar el registro
+            1. abrir fichero movimientos.txt en lectura
+            2. abrir fichero nmovimientos.txt en escritura
+            3. copiar todo los registros uno a uno en su orden exceptuando el que queremos borrar
+            4. borrar movimiento.txt
+            5. renombrar nmovimeintos.txt a movmientos.txt
         """       
-        return f"Este es el id que vamos a borrar {id}"
-        pass
+        delete_by(id)
+
+        return redirect(url_for("index"))
+
  
