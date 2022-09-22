@@ -1,5 +1,5 @@
-from crypt import methods
-from flask import render_template, request, redirect
+import re
+from flask import render_template, request, redirect, url_for
 import csv
 from registro_ig import app
 from datetime import date
@@ -50,7 +50,7 @@ def alta():
             fichero.write(f"{id}")
             fichero.close()           
 
-            return redirect("/")
+            return redirect(url_for("index"))
         else:
             return render_template("new.html", pageTitle="Alta", msgErrors=errores, dataForm=dict(request.form))
 
@@ -97,12 +97,24 @@ def borrar(id):
         2. Devolver el formulario html con los datos de mi registro, no modificables 
         3. Tendrá un boton que diga confirmar.
         """
-        
+        fichero = open("data/movimientos.txt", "r", newline="")
+        csvReader = csv.reader(fichero, delimiter=',', quotechar='"')
+        registro_definitivo = []
+        for registro in csvReader:
+            if registro[0] == str(id):
+                registro_definitivo = registro
+                break
 
-        return render_template("delete.html", registro=[])
+        fichero.close()
+
+        if registro_definitivo:
+            return render_template("delete.html", registro=registro_definitivo)
+        else:
+            return redirect(url_for("index"))
     else:
         """
             Borrar el registro
         """       
+        return f"Este es el id que vamos a borrar {id}"
         pass
  
