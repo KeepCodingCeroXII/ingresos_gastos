@@ -33,13 +33,22 @@ def alta():
         errores = validaFormulario(request.form)
 
         if not errores:
+            #Obtener el nuevo id
+            fichero = open("data/last_id.txt", "r")
+            registro = fichero.read()
+            id = int(registro) + 1
+            print(id)
+            fichero.close()
+
             fichero = open("data/movimientos.txt", "a", newline="")
             csvWriter = csv.writer(fichero, delimiter=",", quotechar='"')
 
-            # Generar un nuevo id
-
-            csvWriter.writerow([request.form['date'], request.form['concept'], request.form['quantity']])
+            csvWriter.writerow(["{}".format(id), request.form['date'], request.form['concept'], request.form['quantity']])
             fichero.close()
+
+            fichero = open("data/last_id.txt", "w")
+            fichero.write(f"{id}")
+            fichero.close()           
 
             return redirect("/")
         else:
@@ -62,7 +71,7 @@ def validaFormulario(camposFormulario):
     return errores
 
     
-@app.route("/modificar/<int: id>", methods=["GET", "POST"])
+@app.route("/modificar/<int:id>", methods=["GET", "POST"])
 def modifica(id):
     if request.method == "GET":
         """
@@ -88,7 +97,9 @@ def borrar(id):
         2. Devolver el formulario html con los datos de mi registro, no modificables 
         3. Tendrá un boton que diga confirmar.
         """
-        return render_template("borra.html", registro=[])
+        
+
+        return render_template("delete.html", registro=[])
     else:
         """
             Borrar el registro
