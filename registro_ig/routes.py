@@ -4,7 +4,7 @@ import csv
 from registro_ig import app
 from datetime import date
 from config import *
-from registro_ig.models import delete_by, select_all, select_by, insert
+from registro_ig.models import delete_by, select_all, select_by, insert, update_by
 import os
 
 @app.route("/")
@@ -39,7 +39,7 @@ def validaFormulario(camposFormulario):
     errores = []
     hoy = date.today().isoformat()
     if camposFormulario['date'] > hoy:
-        errores.append("La fecha introducida es es futuro.")
+        errores.append("La fecha introducida es el futuro.")
 
     if camposFormulario['concept'] == "":
         errores.append("Introduce un concepto para la transacción.")
@@ -51,6 +51,12 @@ def validaFormulario(camposFormulario):
 
     return errores
 
+def form_to_list(id, form):
+    return [str(id),
+            form['date'], 
+            form['concept'],
+            form['quantity']
+            ]
     
 @app.route("/modificar/<int:id>", methods=["GET", "POST"])
 def modifica(id):
@@ -59,8 +65,8 @@ def modifica(id):
         1. Consultar en movimientos.txt y recueperar el registro con id al de la petición
         2. Devolver el formulario html con los datos de mi registro
         """
-
-        return render_template("modifica.html", registro=[])
+        register = select_by(id)
+        return render_template("update.html", registro=register, pageTitle = "Modificar")
     else:
         """
         1. validar registro de entrada
@@ -68,7 +74,15 @@ def modifica(id):
         3. redirect 
         4. Si el registro es incorrecto la gestion de errores que conocemos
         """
-        pass
+        errores = validaFormulario(request.form)
+
+        if not errores:
+            update_by(form_to_list(id, request.form))
+            return redirect(url_for("index"))
+        else:
+            return render_template("update.html", registro=form_to_list(id, request.form), pageTitle = "Modificar", msgErrors=errores)
+
+
 
 @app.route("/borrar/<int:id>", methods=["GET", "POST"])
 def borrar(id):
